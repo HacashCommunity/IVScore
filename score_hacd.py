@@ -172,17 +172,15 @@ def match_visual(name: str | None, life_gene: str, matches: set[str]) -> None:
         return
 
     slots = visual_color_slots(name, life_gene)
-    max_color_count = max(Counter(slots[:16]).values())
-    for count in range(2, 17):
-        if max_color_count >= count:
-            add(matches, f"hip5_all_shapes_same_color_count_ge_{count}")
+    color_count = len(set(slots[:16]))
+    add(matches, f"hip5_color_spectrum_exact_{color_count}")
 
     if shape:
         center_matches = sum(1 for slot in slots[1:16] if slot == slots[0])
         if center_matches > 0:
             add(matches, f"hip5_special_shape_center_matches_exact_{center_matches}")
 
-    if shape or max_color_count == 16:
+    if shape or color_count == 1:
         return
     bottom_slots = [slots[14], slots[12], slots[13], slots[15]]
     for feature_id, pattern in COMMON_BOTTOM_STYLE_PATTERNS:

@@ -13,7 +13,6 @@ import math
 from collections import Counter
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
-from fractions import Fraction
 from itertools import product
 from pathlib import Path
 
@@ -207,27 +206,17 @@ def count_number_patterns() -> Counter[str]:
     return counts
 
 
-def count_color_max_le(slots: int, colors: int, cap: int) -> int:
-    """Count color assignments where no color appears more than cap times."""
-    poly = [Fraction(0) for _ in range(slots + 1)]
-    poly[0] = Fraction(1)
-    base = [Fraction(0) for _ in range(slots + 1)]
-    for count in range(cap + 1):
-        base[count] = Fraction(1, math.factorial(count))
-    for _ in range(colors):
-        nxt = [Fraction(0) for _ in range(slots + 1)]
-        for a, aval in enumerate(poly):
-            if aval == 0:
-                continue
-            for b in range(slots + 1 - a):
-                if base[b] == 0:
-                    continue
-                nxt[a + b] += aval * base[b]
-        poly = nxt
-    value = poly[slots] * math.factorial(slots)
-    if value.denominator != 1:
-        raise ValueError("color count should be integral")
-    return value.numerator
+def stirling_second_kind(n: int, k: int) -> int:
+    table = [[0 for _ in range(k + 1)] for _ in range(n + 1)]
+    table[0][0] = 1
+    for row in range(1, n + 1):
+        for col in range(1, min(row, k) + 1):
+            table[row][col] = col * table[row - 1][col] + table[row - 1][col - 1]
+    return table[n][k]
+
+
+def color_distinct_exact_occurrences(count: int) -> int:
+    return permutations(16, count) * stirling_second_kind(16, count)
 
 
 def build_catalog() -> list[Feature]:
@@ -312,19 +301,19 @@ def build_catalog() -> list[Feature]:
             "hip5_special_center_match",
             "local HIP-5 slot map",
         )
-    for count in range(2, 17):
-        occurrences = color_space - count_color_max_le(16, 16, count - 1)
+    for count in range(1, 17):
+        occurrences = color_distinct_exact_occurrences(count)
         add(
             rows,
-            f"hip5_all_shapes_same_color_count_ge_{count}",
+            f"hip5_color_spectrum_exact_{count}",
             "visual_color",
-            f"{count}+ facets share one color",
-            f"At least {count} of the 16 main HIP-5 slots share the same color index.",
-            f"max_count(color_slot[0:16]) >= {count}",
+            "HIP-5: Color Spectrum",
+            f"HIP-5: {count} colors. Exactly {count} distinct color indexes appear across the 16 main HIP-5 slots.",
+            f"unique_count(color_slot[0:16]) == {count}",
             color_space,
             occurrences,
-            "hip5_same_color_count",
-            "local HIP-5 color occupancy",
+            "hip5_color_spectrum",
+            "local HIP-5 color spectrum occupancy",
         )
 
     for feature_id, label, key in [
