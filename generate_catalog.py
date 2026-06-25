@@ -20,18 +20,34 @@ from pathlib import Path
 ALPHABET = "WTYUIAHXVMEKBSZN"
 NAME_SPACE = len(ALPHABET) ** 6
 MAX_HACD = 16_777_216
+NAME_COMPOSITION_PATTERNS = (
+    ("name_letter_count_6", "Six matching letters", (6,)),
+    ("name_letter_count_5_1", "Five matching letters", (5, 1)),
+    ("name_letter_count_4_2", "4+2 matching letters", (4, 2)),
+    ("name_letter_count_3_3", "3+3 matching letters", (3, 3)),
+    ("name_letter_count_2_2_2", "2+2+2 matching letters", (2, 2, 2)),
+    ("name_letter_count_4_1_1", "Four matching letters", (4, 1, 1)),
+    ("name_letter_count_3_2_1", "3+2 matching letters", (3, 2, 1)),
+    ("name_letter_count_3_1_1_1", "Three matching letters", (3, 1, 1, 1)),
+    ("name_letter_count_2_2_1_1", "2+2 matching letters", (2, 2, 1, 1)),
+    ("name_letter_count_2_1_1_1_1", "Two matching letters", (2, 1, 1, 1, 1)),
+    ("name_letter_count_1_1_1_1_1_1", "All letters different", (1, 1, 1, 1, 1, 1)),
+)
+NAME_CONSECUTIVE_PATTERNS = (
+    ("name_consecutive_matching_letters_6", "Six consecutive matching letters", (6,)),
+    ("name_consecutive_matching_letters_4_2", "4+2 consecutive matching letters", (4, 2)),
+    ("name_consecutive_matching_letters_3_3", "3+3 consecutive matching letters", (3, 3)),
+    ("name_consecutive_matching_letters_2_2_2", "2+2+2 consecutive matching letters", (2, 2, 2)),
+    ("name_consecutive_matching_letters_5", "Five consecutive matching letters", (5,)),
+    ("name_consecutive_matching_letters_3_2", "3+2 consecutive matching letters", (3, 2)),
+    ("name_consecutive_matching_letters_4", "Four consecutive matching letters", (4,)),
+    ("name_consecutive_matching_letters_2_2", "2+2 consecutive matching letters", (2, 2)),
+    ("name_consecutive_matching_letters_3", "Three consecutive matching letters", (3,)),
+    ("name_consecutive_matching_letters_2", "Two consecutive matching letters", (2,)),
+)
 SPECIAL_NAME_PATTERNS = (
-    "XXXYYY",
-    "XYZXYZ",
-    "XXYYZZ",
-    "XYYXYY",
-    "XXYXXY",
-    "XYYZZZ",
-    "XXXYYZ",
-    "XYYYYX",
-    "XXYYXX",
-    "XXXXXX",
-    "XYZZYX",
+    ("name_pattern_ababab", "ABABAB pattern", "ABABAB"),
+    ("name_pattern_abcabc", "ABCABC pattern", "ABCABC"),
 )
 COMMON_BOTTOM_STYLE_PATTERNS = (
     ("hip5_common_bottom_left_three_pure", "Left three pure", "AAAB"),
@@ -162,27 +178,25 @@ def count_name_patterns() -> Counter[str]:
     counts: Counter[str] = Counter()
     for name in product(range(len(ALPHABET)), repeat=6):
         letter_counts = Counter(name)
-        max_count = max(letter_counts.values())
-        unique_count = len(letter_counts)
+        composition = tuple(sorted(letter_counts.values(), reverse=True))
 
-        max_run = 1
+        consecutive: list[int] = []
         run = 1
         for index in range(1, len(name)):
             if name[index] == name[index - 1]:
                 run += 1
-                max_run = max(max_run, run)
             else:
+                if run >= 2:
+                    consecutive.append(run)
                 run = 1
+        if run >= 2:
+            consecutive.append(run)
+        if consecutive:
+            counts[f"consecutive_{'_'.join(str(item) for item in sorted(consecutive, reverse=True))}"] += 1
 
-        for length in range(2, 7):
-            if max_run >= length:
-                counts[f"run_ge_{length}"] += 1
-            if max_count >= length:
-                counts[f"count_ge_{length}"] += 1
-
-        counts[f"unique_exact_{unique_count}"] += 1
-        counts[f"max_count_exact_{max_count}"] += 1
-        counts[f"max_run_exact_{max_run}"] += 1
+        counts[f"composition_{'_'.join(str(item) for item in composition)}"] += 1
+        if name == name[::-1]:
+            counts["palindrome"] += 1
 
     return counts
 
@@ -224,46 +238,59 @@ def build_catalog() -> list[Feature]:
     name_counts = count_name_patterns()
     number_counts = count_number_patterns()
 
-    for length in range(2, 7):
+    for feature_id, label, pattern in NAME_CONSECUTIVE_PATTERNS:
         add(
             rows,
-            f"name_run_ge_{length}",
+            feature_id,
             "name",
-            f"{length} consecutive equal letters",
-            f"The name contains a consecutive run of at least {length} equal letters.",
-            f"max_run(name) >= {length}",
+            label,
+            f"The name contains consecutive matching-letter groups with sizes {'+'.join(str(item) for item in pattern)}.",
+            f"consecutive_group_sizes(name) == {pattern}",
             NAME_SPACE,
-            name_counts[f"run_ge_{length}"],
-            "name_run",
+            name_counts[f"consecutive_{'_'.join(str(item) for item in pattern)}"],
+            "name_consecutive_matching_letters",
             "local-combinatorics",
         )
+
+    for feature_id, label, pattern in NAME_COMPOSITION_PATTERNS:
         add(
             rows,
-            f"name_letter_count_ge_{length}",
+            feature_id,
             "name",
-            f"One letter appears {length}+ times",
-            f"At least one of the 16 HACD letters appears {length} or more times in the name.",
-            f"max_count(name) >= {length}",
+            label,
+            f"The name has exact matching-letter composition {'+'.join(str(item) for item in pattern)}, ignoring order.",
+            f"letter_count_partition(name) == {pattern}",
             NAME_SPACE,
-            name_counts[f"count_ge_{length}"],
+            name_counts[f"composition_{'_'.join(str(item) for item in pattern)}"],
             "name_letter_count",
             "local-combinatorics",
         )
 
-    for pattern in SPECIAL_NAME_PATTERNS:
-        symbol_count = len(set(pattern))
+    for feature_id, label, pattern in SPECIAL_NAME_PATTERNS:
         add(
             rows,
-            name_pattern_id(pattern),
+            feature_id,
             "name",
-            pattern,
+            label,
             f"Symbolic pattern {pattern}; each distinct symbol must map to a distinct HACD letter.",
-            f"matches_symbol_pattern(name, '{pattern}') with {symbol_count} distinct symbols",
+            f"matches_symbol_pattern(name, '{pattern}')",
             NAME_SPACE,
             name_pattern_occurrences(pattern),
             "name_special_pattern",
             "local-combinatorics",
         )
+    add(
+        rows,
+        "name_pattern_palindrome",
+        "name",
+        "Palindrome",
+        "The HACD name reads the same forward and backward.",
+        "name == reverse(name)",
+        NAME_SPACE,
+        name_counts["palindrome"],
+        "name_special_pattern",
+        "local-combinatorics",
+    )
 
     add(rows, "hip5_shape_any_rare", "visual_shape", "Non-diamond shape", "Any irregular HIP-5 shape: square, ellipse, heart, triangle, teardrop, circle, rhombus, or hexagon.", "life_gene[31] in 0x01..0x08", 256, 8, "hip5_shape", "fullnode/explorer HIP-5 shape rule")
     add(rows, "hip5_shape_common", "visual_shape", "Common diamond", "Standard HIP-5 diamond shape.", "life_gene[31] not in 0x01..0x08", 256, 248, "hip5_shape", "fullnode/explorer HIP-5 shape rule")

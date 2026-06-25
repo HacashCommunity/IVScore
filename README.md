@@ -63,12 +63,13 @@ Main columns:
 
 Name:
 
-- Consecutive runs: 2, 3, 4, 5, or 6 equal letters in a row.
-- Global repetition: one letter appears 2, 3, 4, 5, or 6 times.
-- Explicit symbolic patterns: `XXXYYY`, `XYZXYZ`, `XXYYZZ`, `XYYXYY`, `XXYXXY`, `XYYZZZ`, `XXXYYZ`, `XYYYYX`, `XXYYXX`, `XXXXXX`, `XYZZYX`.
+- Letter composition, ignoring order: `Six matching letters`, `Five matching letters`, `4+2 matching letters`, `3+3 matching letters`, `2+2+2 matching letters`, `Four matching letters`, `3+2 matching letters`, `Three matching letters`, `2+2 matching letters`, `Two matching letters`, and `All letters different`.
+- Consecutive matching letters: exact repeated blocks such as `2`, `3`, `2+2`, `3+2`, `2+2+2`, `3+3`, `4+2`, and `6`.
+- Explicit symbolic patterns: `ABABAB`, `ABCABC`, and six-letter palindromes.
 
-Global letter repetition is scored by probability: `2+ = 61`, `3+ = 389`, `4+ = 824`, `5+ = 1349`, and `6 = 2000`. Names with all distinct letters do not receive this repetition bonus.
-For symbolic patterns, repeated symbols must use the same HACD letter and different symbols must use different HACD letters. The resulting pattern scores are probability-based: one-symbol patterns such as `XXXXXX` score `2000`, two-symbol patterns such as `XXXYYY` score `1609`, and three-symbol patterns such as `XYZXYZ` score `1229`.
+Letter composition is scored by exact probability: `6 = 2000`, `5+1 = 1351`, `4+2 = 1219`, `3+3 = 1277`, `2+2+2 = 838`, `4+1+1 = 838`, `3+2+1 = 638`, `3+1+1+1 = 426`, `2+2+1+1 = 309`, `2+1+1+1+1 = 109`, and `1+1+1+1+1+1 = 154`.
+Consecutive matching letters are also scored by exact repeated-block probability: `2 = 205`, `3 = 628`, `2+2 = 569`, `4 = 1060`, `3+2 = 960`, `5 = 1509`, `2+2+2 = 1219`, `3+3 = 1609`, `4+2 = 1509`, and `6 = 2000`.
+For symbolic patterns, repeated symbols must use the same HACD letter and different symbols must use different HACD letters. `ABABAB` scores `1609`, `ABCABC` scores `1229`, and palindromes score `1200`.
 
 HIP-5 Visual:
 
