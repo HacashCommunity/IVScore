@@ -21,16 +21,16 @@ ALPHABET = "WTYUIAHXVMEKBSZN"
 NAME_SPACE = len(ALPHABET) ** 6
 MAX_HACD = 16_777_216
 NAME_COMPOSITION_PATTERNS = (
-    ("name_letter_count_6", "Six matching letters", (6,)),
-    ("name_letter_count_5_1", "Five matching letters", (5, 1)),
+    ("name_letter_count_6", "6 matching letters", (6,)),
+    ("name_letter_count_5_1", "5 matching letters", (5, 1)),
     ("name_letter_count_4_2", "4+2 matching letters", (4, 2)),
     ("name_letter_count_3_3", "3+3 matching letters", (3, 3)),
     ("name_letter_count_2_2_2", "2+2+2 matching letters", (2, 2, 2)),
-    ("name_letter_count_4_1_1", "Four matching letters", (4, 1, 1)),
+    ("name_letter_count_4_1_1", "4 matching letters", (4, 1, 1)),
     ("name_letter_count_3_2_1", "3+2 matching letters", (3, 2, 1)),
-    ("name_letter_count_3_1_1_1", "Three matching letters", (3, 1, 1, 1)),
+    ("name_letter_count_3_1_1_1", "3 matching letters", (3, 1, 1, 1)),
     ("name_letter_count_2_2_1_1", "2+2 matching letters", (2, 2, 1, 1)),
-    ("name_letter_count_2_1_1_1_1", "Two matching letters", (2, 1, 1, 1, 1)),
+    ("name_letter_count_2_1_1_1_1", "2 matching letters", (2, 1, 1, 1, 1)),
     ("name_letter_count_1_1_1_1_1_1", "All letters different", (1, 1, 1, 1, 1, 1)),
 )
 NAME_CONSECUTIVE_PATTERNS = (
@@ -59,6 +59,85 @@ COMMON_BOTTOM_STYLE_PATTERNS = (
     ("hip5_common_bottom_double_mix", "Double mix", "ABAB"),
     ("hip5_common_bottom_center_color", "Center color", "BAAC"),
 )
+HEART_MIRROR_PAIRS = (
+    (0, 1),
+    (2, 3),
+    (4, 5),
+    (6, 7),
+    (8, 9),
+    (10, 11),
+    (12, 13),
+    (14, 15),
+)
+SQUARE_MIRROR_PAIRS = (
+    (0, 3),
+    (1, 2),
+    (4, 5),
+    (6, 7),
+    (8, 9),
+    (10, 11),
+    (12, 15),
+    (13, 14),
+)
+ELLIPSE_MIRROR_PAIRS = (
+    (0, 1),
+    (2, 3),
+    (4, 5),
+    (6, 7),
+    (8, 10),
+    (9, 11),
+    (12, 14),
+    (13, 15),
+)
+TEARDROP_MIRROR_PAIRS = (
+    (0, 1),
+    (2, 4),
+    (3, 5),
+    (6, 11),
+    (7, 12),
+    (8, 13),
+    (9, 14),
+    (10, 15),
+)
+CIRCLE_MIRROR_PAIRS = (
+    (0, 1),
+    (2, 3),
+    (4, 6),
+    (5, 7),
+    (8, 11),
+    (9, 10),
+    (12, 15),
+    (13, 14),
+)
+RHOMBUS_MIRROR_PAIRS = (
+    (0, 3),
+    (1, 2),
+    (4, 5),
+    (6, 7),
+    (8, 15),
+    (9, 14),
+    (10, 13),
+    (11, 12),
+)
+HEXAGON_MIRROR_PAIRS = (
+    (0, 2),
+    (1, 3),
+    (4, 5),
+    (6, 9),
+    (7, 8),
+    (10, 13),
+    (11, 15),
+    (12, 14),
+)
+TRIANGLE_MIRROR_GROUPS = (
+    (0, 1, 2),
+    (3, 4),
+    (5, 8),
+    (6, 7),
+    (9, 12),
+    (10, 11),
+    (13, 14),
+)
 
 SHAPES = {
     "square": 1,
@@ -69,6 +148,18 @@ SHAPES = {
     "circle": 6,
     "rhombus": 7,
     "hexagon": 8,
+}
+MIRROR_PAIR_SHAPES = {
+    "heart": HEART_MIRROR_PAIRS,
+    "square": SQUARE_MIRROR_PAIRS,
+    "ellipse": ELLIPSE_MIRROR_PAIRS,
+    "teardrop": TEARDROP_MIRROR_PAIRS,
+    "circle": CIRCLE_MIRROR_PAIRS,
+    "rhombus": RHOMBUS_MIRROR_PAIRS,
+    "hexagon": HEXAGON_MIRROR_PAIRS,
+}
+MIRROR_GROUP_SHAPES = {
+    "triangle": TRIANGLE_MIRROR_GROUPS,
 }
 
 CSV_FIELDS = [
@@ -229,8 +320,36 @@ def stirling_second_kind(n: int, k: int) -> int:
     return table[n][k]
 
 
-def color_distinct_exact_occurrences(count: int) -> int:
-    return permutations(16, count) * stirling_second_kind(16, count)
+def rendered_facet_count(shape: str | None) -> int:
+    return 17 if shape and shape != "triangle" else 16
+
+
+def color_distinct_exact_occurrences(slot_count: int, color_count: int) -> int:
+    return permutations(16, color_count) * stirling_second_kind(slot_count, color_count)
+
+
+def center_match_occurrences(slot_count: int, match_count: int) -> int:
+    other_slots = slot_count - 1
+    return 16 * math.comb(other_slots, match_count) * (15 ** (other_slots - match_count))
+
+
+def pair_match_occurrences(pair_count: int, unpaired_count: int, match_count: int) -> int:
+    return (16 ** (pair_count + unpaired_count)) * math.comb(pair_count, match_count) * (15 ** (pair_count - match_count))
+
+
+def group_match_occurrences(groups: tuple[tuple[int, ...], ...], unpaired_count: int, match_count: int) -> int:
+    ways = [0] * (len(groups) + 1)
+    ways[0] = 1
+    for group in groups:
+        match_occurrences = 16
+        nonmatch_occurrences = (16 ** len(group)) - match_occurrences
+        next_ways = [0] * (len(groups) + 1)
+        for count, current in enumerate(ways):
+            next_ways[count] += current * nonmatch_occurrences
+            if count < len(groups):
+                next_ways[count + 1] += current * match_occurrences
+        ways = next_ways
+    return ways[match_count] * (16 ** unpaired_count)
 
 
 def build_catalog() -> list[Feature]:
@@ -314,22 +433,62 @@ def build_catalog() -> list[Feature]:
             "hip5_common_bottom",
             "hacash.diamonds style + local HIP-5 slot map",
         )
-    for matches in range(1, 16):
-        occurrences = 16 * math.comb(15, matches) * (15 ** (15 - matches))
-        add(
-            rows,
-            f"hip5_special_shape_center_matches_exact_{matches}",
-            "visual_color",
-            f"Special shape with {matches} center-color matching facets",
-            f"Conditioned on a non-diamond shape: exactly {matches} of the other 15 main slots match the center slot.",
-            f"given shape != common: count(color_slot[1:16] == color_slot[0]) == {matches}",
-            color_space,
-            occurrences,
-            "hip5_special_center_match",
-            "local HIP-5 slot map",
-        )
+    for shape in SHAPES:
+        facet_count = rendered_facet_count(shape)
+        shape_color_space = 16**facet_count
+        label_shape = shape.title()
+        for matches in range(1, facet_count):
+            occurrences = center_match_occurrences(facet_count, matches)
+            add(
+                rows,
+                f"hip5_special_shape_{shape}_center_matches_exact_{matches}",
+                "visual_color",
+                f"HIP-5: {label_shape} shape: {matches} facets match center",
+                f"In the HIP-5 {shape} shape, exactly {matches} rendered facets match the center facet.",
+                f"shape == {shape} and count(rendered_color_slot[1:{facet_count}] == rendered_color_slot[0]) == {matches}",
+                shape_color_space,
+                occurrences,
+                "hip5_special_center_match",
+                "local HIP-5 rendered facet map",
+            )
+    for shape, pairs in MIRROR_PAIR_SHAPES.items():
+        facet_count = rendered_facet_count(shape)
+        shape_color_space = 16**facet_count
+        unpaired_count = facet_count - len(pairs) * 2
+        label_shape = shape.title()
+        for matches in range(1, len(pairs) + 1):
+            add(
+                rows,
+                f"hip5_special_shape_{shape}_mirror_pairs_exact_{matches}",
+                "visual_color",
+                f"HIP-5: {label_shape} shape: {matches} mirror pairs",
+                f"In the HIP-5 {shape} shape, exactly {matches} of the {len(pairs)} mirror facet pairs use matching color indexes.",
+                f"shape == {shape} and count_matching_pairs({pairs}) == {matches}",
+                shape_color_space,
+                pair_match_occurrences(len(pairs), unpaired_count, matches),
+                "hip5_special_mirror_symmetry",
+                f"user-defined HIP-5 {shape} mirror facet map",
+            )
+    for shape, groups in MIRROR_GROUP_SHAPES.items():
+        facet_count = rendered_facet_count(shape)
+        shape_color_space = 16**facet_count
+        unpaired_count = facet_count - sum(len(group) for group in groups)
+        label_shape = shape.title()
+        for matches in range(1, len(groups) + 1):
+            add(
+                rows,
+                f"hip5_special_shape_{shape}_mirror_groups_exact_{matches}",
+                "visual_color",
+                f"HIP-5: {label_shape} shape: {matches} mirror groups",
+                f"In the HIP-5 {shape} shape, exactly {matches} of the {len(groups)} mirror facet groups use matching color indexes.",
+                f"shape == {shape} and count_matching_groups({groups}) == {matches}",
+                shape_color_space,
+                group_match_occurrences(groups, unpaired_count, matches),
+                "hip5_special_mirror_symmetry",
+                f"user-defined HIP-5 {shape} mirror facet map",
+            )
     for count in range(1, 17):
-        occurrences = color_distinct_exact_occurrences(count)
+        occurrences = color_distinct_exact_occurrences(16, count)
         add(
             rows,
             f"hip5_color_spectrum_exact_{count}",
@@ -342,6 +501,24 @@ def build_catalog() -> list[Feature]:
             "hip5_color_spectrum",
             "local HIP-5 color spectrum occupancy",
         )
+    for shape in SHAPES:
+        facet_count = rendered_facet_count(shape)
+        shape_color_space = 16**facet_count
+        label_shape = shape.title()
+        for count in range(1, 17):
+            occurrences = color_distinct_exact_occurrences(facet_count, count)
+            add(
+                rows,
+                f"hip5_special_shape_{shape}_color_spectrum_exact_{count}",
+                "visual_color",
+                f"HIP-5: {label_shape} shape: {count} colors",
+                f"HIP-5: {label_shape} shape: {count} colors. Exactly {count} distinct color indexes appear across the {facet_count} rendered facets.",
+                f"shape == {shape} and unique_count(rendered_color_slot[0:{facet_count}]) == {count}",
+                shape_color_space,
+                occurrences,
+                "hip5_color_spectrum",
+                "local HIP-5 rendered facet color spectrum occupancy",
+            )
 
     for feature_id, label, key in [
         ("number_repdigit", "Single repeated digit number", "number_repdigit"),

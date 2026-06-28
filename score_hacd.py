@@ -49,6 +49,85 @@ COMMON_BOTTOM_STYLE_PATTERNS = (
     ("hip5_common_bottom_double_mix", "ABAB"),
     ("hip5_common_bottom_center_color", "BAAC"),
 )
+HEART_MIRROR_PAIRS = (
+    (0, 1),
+    (2, 3),
+    (4, 5),
+    (6, 7),
+    (8, 9),
+    (10, 11),
+    (12, 13),
+    (14, 15),
+)
+SQUARE_MIRROR_PAIRS = (
+    (0, 3),
+    (1, 2),
+    (4, 5),
+    (6, 7),
+    (8, 9),
+    (10, 11),
+    (12, 15),
+    (13, 14),
+)
+ELLIPSE_MIRROR_PAIRS = (
+    (0, 1),
+    (2, 3),
+    (4, 5),
+    (6, 7),
+    (8, 10),
+    (9, 11),
+    (12, 14),
+    (13, 15),
+)
+TEARDROP_MIRROR_PAIRS = (
+    (0, 1),
+    (2, 4),
+    (3, 5),
+    (6, 11),
+    (7, 12),
+    (8, 13),
+    (9, 14),
+    (10, 15),
+)
+CIRCLE_MIRROR_PAIRS = (
+    (0, 1),
+    (2, 3),
+    (4, 6),
+    (5, 7),
+    (8, 11),
+    (9, 10),
+    (12, 15),
+    (13, 14),
+)
+RHOMBUS_MIRROR_PAIRS = (
+    (0, 3),
+    (1, 2),
+    (4, 5),
+    (6, 7),
+    (8, 15),
+    (9, 14),
+    (10, 13),
+    (11, 12),
+)
+HEXAGON_MIRROR_PAIRS = (
+    (0, 2),
+    (1, 3),
+    (4, 5),
+    (6, 9),
+    (7, 8),
+    (10, 13),
+    (11, 15),
+    (12, 14),
+)
+TRIANGLE_MIRROR_GROUPS = (
+    (0, 1, 2),
+    (3, 4),
+    (5, 8),
+    (6, 7),
+    (9, 12),
+    (10, 11),
+    (13, 14),
+)
 SHAPE_BY_BYTE = {
     1: "square",
     2: "ellipse",
@@ -59,6 +138,22 @@ SHAPE_BY_BYTE = {
     7: "rhombus",
     8: "hexagon",
 }
+MIRROR_PAIRS_BY_SHAPE = {
+    "heart": HEART_MIRROR_PAIRS,
+    "square": SQUARE_MIRROR_PAIRS,
+    "ellipse": ELLIPSE_MIRROR_PAIRS,
+    "teardrop": TEARDROP_MIRROR_PAIRS,
+    "circle": CIRCLE_MIRROR_PAIRS,
+    "rhombus": RHOMBUS_MIRROR_PAIRS,
+    "hexagon": HEXAGON_MIRROR_PAIRS,
+}
+MIRROR_GROUPS_BY_SHAPE = {
+    "triangle": TRIANGLE_MIRROR_GROUPS,
+}
+
+
+def rendered_facet_count(shape: str | None) -> int:
+    return 17 if shape and shape != "triangle" else 16
 
 
 def load_catalog() -> dict[str, dict[str, str]]:
@@ -194,13 +289,32 @@ def match_visual(name: str | None, life_gene: str, matches: set[str]) -> None:
         return
 
     slots = visual_color_slots(name, life_gene)
-    color_count = len(set(slots[:16]))
-    add(matches, f"hip5_color_spectrum_exact_{color_count}")
+    facet_count = rendered_facet_count(shape)
+    rendered_slots = slots[:facet_count]
+    color_count = len(set(rendered_slots))
+    if shape:
+        add(matches, f"hip5_special_shape_{shape}_color_spectrum_exact_{color_count}")
+    else:
+        add(matches, f"hip5_color_spectrum_exact_{color_count}")
 
     if shape:
-        center_matches = sum(1 for slot in slots[1:16] if slot == slots[0])
+        center_matches = sum(1 for slot in rendered_slots[1:] if slot == rendered_slots[0])
         if center_matches > 0:
-            add(matches, f"hip5_special_shape_center_matches_exact_{center_matches}")
+            add(matches, f"hip5_special_shape_{shape}_center_matches_exact_{center_matches}")
+        shape_mirror_pairs = MIRROR_PAIRS_BY_SHAPE.get(shape)
+        if shape_mirror_pairs:
+            mirror_pairs = sum(1 for left, right in shape_mirror_pairs if rendered_slots[left] == rendered_slots[right])
+            if mirror_pairs > 0:
+                add(matches, f"hip5_special_shape_{shape}_mirror_pairs_exact_{mirror_pairs}")
+        shape_mirror_groups = MIRROR_GROUPS_BY_SHAPE.get(shape)
+        if shape_mirror_groups:
+            mirror_groups = sum(
+                1
+                for group in shape_mirror_groups
+                if all(rendered_slots[index] == rendered_slots[group[0]] for index in group)
+            )
+            if mirror_groups > 0:
+                add(matches, f"hip5_special_shape_{shape}_mirror_groups_exact_{mirror_groups}")
 
     if shape or color_count == 1:
         return
