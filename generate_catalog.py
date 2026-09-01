@@ -501,6 +501,19 @@ def build_catalog() -> list[Feature]:
             "hip5_color_spectrum",
             "local HIP-5 color spectrum occupancy",
         )
+    for tone, palette_size in (("dark", 5), ("light", 11)):
+        add(
+            rows,
+            f"hip5_color_tone_{tone}",
+            "visual_color",
+            f"HIP-5: {tone.title()} Color",
+            f"All 16 rendered HIP-5 facets use only {tone} color indexes.",
+            "all(color_slot in [0, 1, 2, 3, 4])" if tone == "dark" else "all(color_slot in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])",
+            16**16,
+            palette_size**16,
+            "hip5_color_tone",
+            "user-defined HIP-5 dark/light color groups",
+        )
     for shape in SHAPES:
         facet_count = rendered_facet_count(shape)
         shape_color_space = 16**facet_count
@@ -518,6 +531,19 @@ def build_catalog() -> list[Feature]:
                 occurrences,
                 "hip5_color_spectrum",
                 "local HIP-5 rendered facet color spectrum occupancy",
+            )
+        for tone, palette_size in (("dark", 5), ("light", 11)):
+            add(
+                rows,
+                f"hip5_special_shape_{shape}_color_tone_{tone}",
+                "visual_color",
+                f"HIP-5: {label_shape} shape: {tone.title()} Color",
+                f"All {facet_count} rendered HIP-5 {shape} facets use only {tone} color indexes.",
+                f"shape == {shape} and all(rendered_color_slot[0:{facet_count}] in {'[0, 1, 2, 3, 4]' if tone == 'dark' else '[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]'})",
+                shape_color_space,
+                palette_size**facet_count,
+                "hip5_color_tone",
+                "user-defined HIP-5 dark/light color groups",
             )
 
     for feature_id, label, key in [

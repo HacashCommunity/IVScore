@@ -86,8 +86,12 @@ HIP-5 Visual:
 - In the rhombus shape: exact number of mirror facet pairs that match, using pairs `1-4`, `2-3`, `5-6`, `7-8`, `9-16`, `10-15`, `11-14`, and `12-13`. Details are shown as `HIP-5: Rhombus shape: N mirror pairs`.
 - In the hexagon shape: exact number of mirror facet pairs that match, using pairs `1-3`, `2-4`, `5-6`, `7-10`, `8-9`, `11-14`, `12-16`, and `13-15`. Details are shown as `HIP-5: Hexagon shape: N mirror pairs`.
 - `HIP-5: Color Spectrum`: exactly 1 through 16 distinct colors across the rendered HIP-5 facets. Common diamond details are shown as `HIP-5: N colors`; special-shape details are shown as `HIP-5: XXXX shape: N colors`.
+- `HIP-5: Dark Color`: every rendered facet uses a color index from `0` through `4`.
+- `HIP-5: Light Color`: every rendered facet uses a color index from `5` through `15`.
 
 Common-diamond lower styles are scored as symbolic patterns from visual left to right on `[color_slot[14], color_slot[12], color_slot[13], color_slot[15]]`: `Pure = AAAA`, `Left three pure = AAAB`, `Left mix pure = AABA`, `Right three pure = BAAA`, `Right mix pure = ABAA`, `Symmetry = ABBA`, `Half divide = AABB`, `Double mix = ABAB`, and `Center color = BAAC`. HIP-5 Color Spectrum is scored statistically with the event `unique_count(rendered_color_slots) == N`: `1 color = 6000`, `2 colors = 4109`, `3 colors = 2952`, `4 colors = 2123`, `5 colors = 1497`, `6 colors = 1019`, `7 colors = 661`, `8 colors = 405`, `9 colors = 244`, `10 colors = 171`, `11 colors = 187`, `12 colors = 294`, `13 colors = 500`, `14 colors = 819`, `15 colors = 1284`, and `16 colors = 1975` for 16-facet shapes. Extra points for specific diamond zones remain limited to the common diamond; for special shapes, the statistical rule based on how many facets share the center color is preserved. Most special shapes use 17 rendered facets; triangle keeps 16.
+
+Dark/Light Color is an additional statistical group. For 16-facet shapes, all-dark has probability `(5/16)^16` and scores `2685`, while all-light has probability `(11/16)^16` and scores `865`. For 17-facet shapes, the corresponding scores are `2853` and `919`. Mixed dark/light facets receive neither trait.
 
 HACD Number:
 

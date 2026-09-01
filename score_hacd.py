@@ -296,6 +296,10 @@ def match_visual(name: str | None, life_gene: str, matches: set[str]) -> None:
         add(matches, f"hip5_special_shape_{shape}_color_spectrum_exact_{color_count}")
     else:
         add(matches, f"hip5_color_spectrum_exact_{color_count}")
+    if all(slot <= 4 for slot in rendered_slots):
+        add(matches, f"hip5_special_shape_{shape}_color_tone_dark" if shape else "hip5_color_tone_dark")
+    elif all(slot >= 5 for slot in rendered_slots):
+        add(matches, f"hip5_special_shape_{shape}_color_tone_light" if shape else "hip5_color_tone_light")
 
     if shape:
         center_matches = sum(1 for slot in rendered_slots[1:] if slot == rendered_slots[0])
